@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output
+
+# Production builds
+build/
+dist/
+*.log
+
+# Environment variables (CRITICAL!)
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+
+# Expo (React Native)
+.expo/
+.expo-shared/
+
+# Database
+*.db
+*.db-journal
+
+# Docker
+*.log
