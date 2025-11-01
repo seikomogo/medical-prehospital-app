@@ -11,7 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("postgresql://nurseline_admin:sabifasist454@localhost:5432/nurseline_app_dev?schema=public")
+  url      = env("DATABASE_URL")
 }
 
 // Enums
