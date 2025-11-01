@@ -5,11 +5,152 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("postgresql://nurseline_admin:sabifasist454@localhost:5432/nurseline_app_dev?schema=public")
+}
+
+// Enums
+enum UserRole {
+  POMPIER
+  AMBULANTIER
+  ASISTENT
+  MEDIC
+}
+
+enum VerificationCodeType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+// Models
+model User {
+  id                String @id @default(uuid())
+  email             String @unique
+  passwordHash      String @map("password_Hash")
+  role              UserRole
+  institution       String
+  region            String
+
+  isVerified        Boolean @default(false) @map("is_Verified")
+  isActive          Boolean @default(true) @map("is_Active")
+  lastLogin         DateTime? @map("last_Login")
+
+  createdAt         DateTime @default(now()) @map("created_At")
+  updatedAt         DateTime @updatedAt @map("updated_At")
+
+  // Relations
+  verificationCodes VerificationCode[]
+  refreshTokens     RefreshToken[]
+  anamnesisRecords  AnamnesisRecord[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model VerificationCode {
+  id          String               @id @default(uuid())
+  userId      String               @map("user_Id")
+  code        String
+  type        VerificationCodeType
+  used        Boolean              @default(false)
+  expiresAt   DateTime             @map("expires_At")
+  createdAt   DateTime             @default(now()) @map("created_At")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code, type, used, expiresAt])
+  @@map("verification_Codes")
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_Id")
+  token       String   @unique
+  createdAt   DateTime @default(now()) @map("created_At")
+  expiresAt   DateTime @map("expires_At")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_Tokens")
+}
+
+model EmergencyIndex {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_Active")
+
+  createdAt   DateTime @default(now()) @map("created_At")
+  updatedAt   DateTime @updatedAt @map("updated_At")
+
+  // Relations
+  questions   Question[]
+  anamnesisRecords AnamnesisRecord[]
+
+  @@map("emergency_indices")
+}
+
+model Question {
+  id                         String   @id @default(uuid())
+  emergencyIndexId           String   @map("emergency_Index_Id")
+  questionText               String   @map("question_Text")
+  questionOrder              Int      @map("question_Order")
+  isCritical                 Boolean  @default(false) @map("is_Critical")
+
+  createdAt                  DateTime @default(now()) @map("created_At")
+
+  // Relations
+  emergencyIndex EmergencyIndex @relation(fields: [emergencyIndexId], references: [id], onDelete: Cascade)
+
+  @@index([emergencyIndexId])
+  @@map("questions")
+}
+
+model AnamnesisRecord {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_Id")
+  emergencyIndexId  String   @map("emergency_Index_Id")
+  answers           Json
+  generatedText     String  @map("generated_Text") @db.Text
+  generationMethod  String?  @map("generation_Method") // 'template' or 'ai'
+
+  createdAt         DateTime @default(now()) @map("created_At")
+
+  // Relations
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emergencyIndex EmergencyIndex @relation(fields: [emergencyIndexId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([emergencyIndexId])
+  @@map("anamnesis_Records")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_Id")
+  action      String
+  ipAddress   String?  @map("ip_Address")
+  userAgent   String?  @map("user_Agent") @db.Text
+  details     Json?
+
+  createdAt   DateTime @default(now()) @map("created_At")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@map("audit_Logs")
 }
